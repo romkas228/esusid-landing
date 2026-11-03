@@ -1,0 +1,253 @@
+<!doctype html>
+<html lang="uk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>єСусід — сумісний сусід для студента без ріелторів</title>
+<meta name="description" content="єСусід підбирає студентам сусідів за звичками й перевіряє їх через студентську пошту. Ранній доступ — безкоштовно.">
+<!--
+  Landing Page MVP (ПР03). Один файл, без залежностей.
+  Налаштування перед публікацією (див. CONFIG нижче):
+    GA_ID        — Measurement ID Google Analytics 4 (G-XXXXXXXXXX)
+    CLARITY_ID   — ID проєкту Microsoft Clarity
+    FORM_ACTION  — URL Google Forms (formResponse) або іншої форми збору email
+  Поки значення порожні, події пишуться в консоль і в localStorage (ключ susid_events).
+  ?v=2 вмикає версію з лічильником «N студентів уже чекають» (HYP-009), ?src=tg|ig|friends — джерело трафіку.
+-->
+<style>
+:root{--bg:#fbfaf6;--ink:#1c2a2a;--mut:#5b6b6b;--brand:#0f766e;--brand-d:#0b5a54;--soft:#e6f2ef;--warn:#b45309;--card:#fff;--line:#dfe6e3}
+*{box-sizing:border-box}html{scroll-behavior:smooth}
+body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;color:var(--ink);background:var(--bg);line-height:1.55;font-size:17px}
+.wrap{max-width:1040px;margin:0 auto;padding:0 20px}
+section{padding:64px 0}
+h1{font-size:46px;line-height:1.12;margin:0 0 16px;letter-spacing:-.5px}
+h2{font-size:30px;margin:0 0 20px;letter-spacing:-.3px}
+p{margin:0 0 14px}
+.eyebrow{display:inline-block;font-size:13px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--brand);margin-bottom:14px}
+.btn{display:inline-block;background:var(--brand);color:#fff;border:0;border-radius:10px;padding:15px 26px;font-size:17px;font-weight:700;cursor:pointer;text-decoration:none}
+.btn:hover{background:var(--brand-d)}.btn.ghost{background:transparent;color:var(--brand);border:2px solid var(--brand)}
+nav{padding:18px 0}nav .wrap{display:flex;justify-content:space-between;align-items:center}
+.logo{font-weight:800;font-size:22px;color:var(--brand)}
+.hero .wrap{display:grid;grid-template-columns:1.15fr .85fr;gap:40px;align-items:center}
+.hero{padding-bottom:56px}
+.hero .sub{font-size:20px;color:var(--mut);margin-bottom:26px}
+.hero small{display:block;margin-top:12px;color:var(--mut);font-size:14px}
+.cardmock{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:22px;box-shadow:0 12px 30px rgba(15,118,110,.12)}
+.cardmock .who{display:flex;gap:14px;align-items:center;margin-bottom:14px}
+.avatar{width:54px;height:54px;border-radius:50%;background:var(--soft);display:flex;align-items:center;justify-content:center;font-size:26px}
+.badge{display:inline-block;font-size:12px;font-weight:700;background:var(--soft);color:var(--brand-d);border-radius:20px;padding:3px 10px}
+.match{font-size:40px;font-weight:800;color:var(--brand)}
+.bar{height:8px;border-radius:8px;background:var(--line);margin:6px 0 12px;overflow:hidden}.bar i{display:block;height:100%;background:var(--brand)}
+.hab{display:flex;justify-content:space-between;font-size:14px;padding:5px 0;border-bottom:1px dashed var(--line)}
+.alt{background:#f2efe6}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:22px}
+.card h3{margin:6px 0 8px;font-size:19px}.card .ico{font-size:30px}
+.quote{border-left:4px solid var(--brand);padding:6px 0 6px 16px;margin:0 0 18px;font-style:italic}
+.quote cite{display:block;font-style:normal;font-size:14px;color:var(--mut);margin-top:4px}
+.stats{display:flex;gap:30px;flex-wrap:wrap;margin:6px 0 20px}.stats b{display:block;font-size:34px;color:var(--brand)}
+.counter{display:none;background:var(--soft);border-radius:12px;padding:14px 18px;margin-bottom:22px;font-weight:700;color:var(--brand-d)}
+.v2 .counter{display:block}
+.model{display:none}body.demo .model{display:block}body.demo .stats.model{display:flex}
+.steps{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;counter-reset:s}
+.step{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px}
+.step:before{counter-increment:s;content:counter(s);display:flex;width:34px;height:34px;border-radius:50%;background:var(--brand);color:#fff;font-weight:800;align-items:center;justify-content:center;margin-bottom:10px}
+.quiz{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:24px;margin-top:26px}
+.quiz h3{margin:0 0 6px}.opts{display:flex;gap:10px;flex-wrap:wrap;margin:12px 0}
+.opt{border:2px solid var(--line);background:#fff;border-radius:10px;padding:11px 16px;font-size:16px;cursor:pointer}.opt:hover{border-color:var(--brand)}
+.opt.sel{border-color:var(--brand);background:var(--soft)}
+.hidden{display:none}.progress{font-size:13px;color:var(--mut)}
+.result{background:var(--soft);border-radius:12px;padding:16px;margin-top:12px}
+.premium{border:2px dashed var(--warn);border-radius:12px;padding:16px;margin-top:14px;background:#fff8ee}
+.btn.warn{background:var(--warn)}
+.cta{background:var(--brand);color:#fff}.cta h2,.cta p{color:#fff}
+.cta form{display:grid;grid-template-columns:1fr 1.3fr auto;gap:10px;margin:20px 0 10px}
+.cta input{padding:15px;border-radius:10px;border:0;font-size:17px}
+.cta .btn{background:#0b3d39}.cta .next{font-size:15px;opacity:.92;margin:0}
+.thanks{display:none;background:#fff;color:var(--ink);border-radius:12px;padding:18px;margin-top:14px}
+details{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px 20px;margin-bottom:12px}
+summary{font-weight:700;cursor:pointer}details p{margin:10px 0 0;color:var(--mut)}
+footer{padding:30px 0 50px;color:var(--mut);font-size:14px}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.5);display:none;align-items:center;justify-content:center;padding:20px;z-index:9}
+.modal.on{display:flex}.modal .box{background:#fff;border-radius:16px;padding:26px;max-width:460px}
+@media(max-width:820px){h1{font-size:34px}.hero .wrap,.grid3,.steps{grid-template-columns:1fr}.cta form{grid-template-columns:1fr}section{padding:44px 0}}
+</style>
+</head>
+<body>
+<nav><div class="wrap"><span class="logo">єСусід</span><a class="btn ghost" href="#join" data-cta="nav">Ранній доступ</a></div></nav>
+
+<!-- 1. HERO: заголовок = UVP (ПР02), підзаголовок = хто ЦА і що отримує, CTA -->
+<header class="hero"><div class="wrap">
+  <div>
+    <span class="eyebrow">Для студентів, які переїжджають на навчання</span>
+    <h1>Знайди сумісного сусіда й кімнату біля свого ЗВО — без ріелторів</h1>
+    <p class="sub">єСусід показує відсоток сумісності за звичками ще до першого повідомлення, а писати тобі можуть лише студенти, перевірені через пошту університету.</p>
+    <a class="btn" href="#join" data-cta="hero">Отримати ранній доступ — безкоштовно</a>
+    <small>Без оплати й карток. Лише email — ми напишемо, коли відкриємо доступ у Києві.</small>
+  </div>
+  <div class="cardmock" aria-label="Приклад картки кандидата">
+    <div class="who"><div class="avatar">🧑‍🎓</div><div><b>Максим, 19</b><br><span class="badge">✓ Перевірений студент КПІ</span></div></div>
+    <div class="match">87% <span style="font-size:16px;font-weight:600;color:var(--mut)">збіг звичок</span></div>
+    <div class="bar"><i style="width:87%"></i></div>
+    <div class="hab"><span>Лягає спати</span><b>23:30</b></div>
+    <div class="hab"><span>Гості в кімнаті</span><b>раз на тиждень</b></div>
+    <div class="hab"><span>Куріння</span><b>ні</b></div>
+    <div class="hab"><span>Бюджет з людини</span><b>до 5 000 грн</b></div>
+  </div>
+</div></header>
+
+<!-- 2. PROBLEM STATEMENT -->
+<section class="alt"><div class="wrap">
+  <h2>Ти пишеш у чат — і не знаєш, з ким житимеш</h2>
+  <p>Ти переїжджаєш в інше місто й шукаєш сусіда. У Telegram-чатах за вечір набігає по двісті повідомлень, кімнату забирають за годину, а про людину ти знаєш лише ім'я та самоопис «адекватний, охайний».</p>
+  <p>Ти не можеш зрозуміти, о котрій він лягає, чи водить гостей і чи не ріелтор це під виглядом студента. А помилка означає сварки через побут, втрачену передоплату або переїзд посеред семестру.</p>
+</div></section>
+
+<!-- 3. SOLUTION TEASER: 3 переваги (вигоди) + інтерактивний тест (мініанкета з 3 питань) -->
+<section id="solution"><div class="wrap">
+  <h2>Дізнайся, з ким житимеш, ще до першої зустрічі</h2>
+  <div class="grid3">
+    <div class="card"><div class="ico">🧩</div><h3>Знаєш звички наперед</h3><p>10 конкретних питань замість самоопису: режим сну, гості, чистота. Бачиш відсоток збігу в кожній картці.</p></div>
+    <div class="card"><div class="ico">🎓</div><h3>Пишуть лише справжні студенти</h3><p>Доступ через пошту ЗВО. Ріелторам і шахраям тут нічого робити, а профіль має бейдж «Перевірений студент».</p></div>
+    <div class="card"><div class="ico">💸</div><h3>Тільки те, що по кишені</h3><p>Стрічка показує ціну з людини й район біля твого університету. Старт безкоштовний.</p></div>
+  </div>
+
+  <div class="quiz" id="quiz">
+    <h3>Спробуй: 3 питання — і ми покажемо, як виглядає твій збіг</h3>
+    <p class="progress" id="qprog">Питання 1 з 3 · займе 20 секунд, email не потрібен</p>
+    <div class="qstep" data-q="1"><b>Хто ти?</b><div class="opts">
+      <button class="opt" data-role="seeker">Шукаю сусіда й кімнату</button>
+      <button class="opt" data-role="owner">Маю договір оренди, шукаю сусідку</button></div></div>
+    <div class="qstep hidden" data-q="2"><b>О котрій ти зазвичай лягаєш спати?</b><div class="opts">
+      <button class="opt">До 23:00</button><button class="opt">23:00–01:00</button><button class="opt">Після 01:00</button></div></div>
+    <div class="qstep hidden" data-q="3"><b>Як ставишся до гостей у кімнаті?</b><div class="opts">
+      <button class="opt">Краще без гостей</button><button class="opt">Іноді, з попередженням</button><button class="opt">Часто, це нормально</button></div></div>
+    <div class="result hidden" id="qres"></div>
+    <div class="premium hidden" id="premium">
+      <b>Для тих, на кого оформлено оренду: режим «Термінова заміна»</b>
+      <p style="margin:6px 0 12px">Ваше оголошення 7 днів показується першим усім сумісним кандидатам міста й надсилає їм push. Premium — 149 грн/міс.</p>
+      <button class="btn warn" id="fakedoor">Увімкнути за 149 грн</button>
+    </div>
+  </div>
+</div></section>
+
+<!-- 4. SOCIAL PROOF -->
+<section class="alt" id="proof"><div class="wrap">
+  <h2>Чому це потрібно студентам</h2>
+  <div class="counter" id="counter"><span id="waiting">21</span> студентів уже чекають на запуск у Києві</div>
+  <div class="stats model">
+    <div><b>71%</b>студентів бояться заселитися з незнайомою людиною</div>
+    <div><b>43%</b>мали конфлікт із сусідом через побут або гроші</div>
+    <div><b>29%</b>натрапляли на фейкові оголошення чи шахраїв</div>
+  </div>
+  <div class="quote model">«Ідеально — бачити не фото кімнати, а відповіді людини: о котрій лягає, чи водить гостей, чи курить.»<cite>Назар, 19, студент КНУ (інтерв'ю для дослідження)</cite></div>
+  <div class="quote model">«Я виклала пост у три групи і за тиждень отримала 60 повідомлень, а підходили дві людини.»<cite>Ірина, 21, студентка ЛНУ (інтерв'ю для дослідження)</cite></div>
+  <p class="model" style="font-size:14px;color:var(--mut)">Статистика — з опитування 21 студента, проведеного командою проєкту (вересень 2026).</p>
+</div></section>
+
+<!-- 5. HOW IT WORKS -->
+<section id="how"><div class="wrap">
+  <h2>Як це працює</h2>
+  <div class="steps">
+    <div class="step"><b>📝 Заповни анкету</b><p>10 питань про твої звички — 2 хвилини.</p></div>
+    <div class="step"><b>🎓 Підтверди, що ти студент</b><p>Код на пошту університету, без документів.</p></div>
+    <div class="step"><b>🔎 Дивись збіг</b><p>Стрічка кандидатів і кімнат з відсотком сумісності.</p></div>
+    <div class="step"><b>💬 Напиши й зустрічайся</b><p>Чат після взаємного «лайку» і чек-лист питань до першої розмови.</p></div>
+  </div>
+</div></section>
+
+<!-- 6. CTA SECTION -->
+<section class="cta" id="join"><div class="wrap">
+  <h2>Отримай ранній доступ</h2>
+  <p>Залиш ім'я та email — запустимо спершу у Києві (КПІ, КНУ), і ти будеш серед перших.</p>
+  <form id="form" novalidate>
+    <input type="text" name="name" placeholder="Ім'я" autocomplete="given-name" required>
+    <input type="email" name="email" placeholder="Email" autocomplete="email" required>
+    <button class="btn" type="submit" data-cta="form">Хочу доступ</button>
+  </form>
+  <p class="next">Що буде далі: ми надішлемо один лист, коли відкриємо доступ у твоєму місті. Без спаму, відписатися можна в один клік.</p>
+  <div class="thanks" id="thanks"><b>Дякуємо!</b> Ми записали тебе в список. Лист з'явиться, щойно відкриємо доступ.</div>
+</div></section>
+
+<!-- 7. FAQ -->
+<section id="faq"><div class="wrap">
+  <h2>Часті запитання</h2>
+  <details><summary>Це безкоштовно?</summary><p>Пошук, анкета й чат безкоштовні. Платними будуть лише додаткові режими, наприклад пріоритетний показ оголошення.</p></details>
+  <details><summary>Чи справді анкета чесна — а якщо люди брешуть?</summary><p>Ми ставимо конкретні питання про поведінку (о котрій лягаєш, як часто гості), а не просимо описати себе. Після спільного проживання сусіди залишають відгуки.</p></details>
+  <details><summary>Що з моїми даними?</summary><p>Відповіді анкети бачать лише верифіковані студенти після взаємного «лайку». Доступу до пошти чи документів ми не просимо — лише одноразовий код.</p></details>
+  <details><summary>А якщо в моєму місті ще немає людей?</summary><p>Запускаємо по одному місту. Тому ми й збираємо список: коли у твоєму районі наберемо достатньо людей, ми напишемо.</p></details>
+</div></section>
+
+<footer><div class="wrap">єСусід — студентський проєкт на стадії дослідження, продукт ще не запущено. Ця сторінка збирає список охочих на ранній доступ.</div></footer>
+
+<div class="modal" id="modal"><div class="box"><b>Дякуємо за інтерес!</b>
+  <p>«Термінова заміна» ще в розробці. Ми перевіряємо, чи вона потрібна, тому не списуємо жодних коштів. Залиште email у формі нижче — повідомимо, коли функція з'явиться.</p>
+  <a class="btn" href="#join" id="modalok">До форми</a></div></div>
+
+<script>
+/* ============ CONFIG ============ */
+const CONFIG = {GA_ID: "", CLARITY_ID: "", FORM_ACTION: "", WAITING: 0};   // реальна кількість записаних; 0 — лічильник не показується (у ?demo=1 показує 21)
+/* ================================== */
+const qs = new URLSearchParams(location.search);
+const variant = qs.get("v") === "2" ? "v2" : "v1";
+const source = qs.get("src") || "direct";
+const demo = qs.get("demo") === "1"; if (demo) { document.body.classList.add("demo"); CONFIG.WAITING = 21; }
+if (variant === "v2" && CONFIG.WAITING > 0) { document.body.classList.add("v2"); document.getElementById("waiting").textContent = CONFIG.WAITING; }
+
+/* --- аналітика: GA4 + Microsoft Clarity (якщо задано ID), інакше консоль + localStorage --- */
+if (CONFIG.GA_ID) {
+  const s = document.createElement("script"); s.async = true; s.src = "https://www.googletagmanager.com/gtag/js?id=" + CONFIG.GA_ID; document.head.appendChild(s);
+  window.dataLayer = window.dataLayer || []; window.gtag = function(){dataLayer.push(arguments)}; gtag("js", new Date());
+  gtag("config", CONFIG.GA_ID, {page_title: "єСусід " + variant});
+}
+if (CONFIG.CLARITY_ID) {
+  (function(c,l,a,r,i,t,y){c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);})(window,document,"clarity","script",CONFIG.CLARITY_ID);
+}
+function track(name, params) {
+  params = Object.assign({variant, source}, params || {});
+  if (window.gtag) gtag("event", name, params);
+  try { const k = "susid_events", a = JSON.parse(localStorage.getItem(k) || "[]"); a.push({t: Date.now(), name, params}); localStorage.setItem(k, JSON.stringify(a)); } catch (e) {}
+  console.log("[event]", name, params);
+}
+track("landing_view");
+
+/* CTA_click — кожне натискання на кнопку-заклик */
+document.querySelectorAll("[data-cta]").forEach(b => b.addEventListener("click", () => track("CTA_click", {place: b.dataset.cta})));
+
+/* scroll_75 */
+let scrolled = false;
+addEventListener("scroll", () => {
+  const h = document.documentElement; const p = (h.scrollTop + innerHeight) / h.scrollHeight;
+  if (!scrolled && p >= .75) { scrolled = true; track("scroll_75"); }
+}, {passive: true});
+
+/* міні-анкета: quiz_start / quiz_complete; роль «owner» бачить fake door */
+let step = 1, role = null;
+const steps = document.querySelectorAll(".qstep");
+function show(n) { steps.forEach(s => s.classList.toggle("hidden", +s.dataset.q !== n)); document.getElementById("qprog").textContent = "Питання " + n + " з 3 · займе 20 секунд, email не потрібен"; }
+steps.forEach(s => s.querySelectorAll(".opt").forEach(o => o.addEventListener("click", () => {
+  o.parentElement.querySelectorAll(".opt").forEach(x => x.classList.remove("sel")); o.classList.add("sel");
+  if (step === 1) { role = o.dataset.role; track("quiz_start", {role}); }
+  if (step < 3) { step++; setTimeout(() => show(step), 180); return; }
+  steps.forEach(x => x.classList.add("hidden")); document.getElementById("qprog").textContent = "Готово";
+  const r = document.getElementById("qres"); r.classList.remove("hidden");
+  r.innerHTML = role === "owner"
+    ? "<b>Знайшли б кандидаток із середнім збігом 82%.</b> Щоб побачити їх, залиште email — відкриємо доступ першими."
+    : "<b>Знайшли б 3 кандидатів зі збігом 85–91%.</b> Щоб побачити їх, залиште email — відкриємо доступ першими.";
+  track("quiz_complete", {role});
+  if (role === "owner") document.getElementById("premium").classList.remove("hidden");
+})));
+document.getElementById("fakedoor").addEventListener("click", () => { track("fake_door_click", {price: 149}); document.getElementById("modal").classList.add("on"); });
+document.getElementById("modalok").addEventListener("click", () => document.getElementById("modal").classList.remove("on"));
+
+/* форма: form_submit */
+document.getElementById("form").addEventListener("submit", e => {
+  e.preventDefault(); const f = e.target;
+  if (!f.name.value.trim() || !/^\S+@\S+\.\S+$/.test(f.email.value)) { f.email.focus(); return; }
+  track("form_submit", {role: role || "unknown"});
+  if (CONFIG.FORM_ACTION) { const fd = new FormData(f); fd.append("variant", variant); fd.append("source", source); fetch(CONFIG.FORM_ACTION, {method: "POST", mode: "no-cors", body: fd}); }
+  f.style.display = "none"; document.querySelector(".cta .next").style.display = "none"; document.getElementById("thanks").style.display = "block";
+});
+</script>
+</body>
+</html>
