@@ -239,7 +239,7 @@ footer{max-width:860px;margin:0 auto 60px;padding:0 20px;font-size:13px;color:#3
 
 <script>
 /* ============ CONFIG ============ */
-const CONFIG = {GA_ID: "G-H8FT0QEL9B", CLARITY_ID: "z80v8of9k6", FORM_ACTION: "", WAITING: 0};   // реальна кількість записаних; 0 — лічильник не показується (у ?demo=1 показує 21)
+const CONFIG = {GA_ID: "G-H8FT0QEL9B", CLARITY_ID: "z80v8of9k6", FORM_ACTION: "https://docs.google.com/forms/d/e/1FAIpQLSeWTdyw0NLjNg-kT9NBoyrI7HQI9Epe3EnOuMlw2IorJxmzMw/formResponse", FORM_ENTRIES: {name: "entry.586924934", email: "entry.797170494", variant: "entry.1336404352", source: "entry.328083495"}, WAITING: 0};   // реальна кількість записаних; 0 — лічильник не показується (у ?demo=1 показує 21)
 /* ================================== */
 const qs = new URLSearchParams(location.search);
 const variant = qs.get("v") === "2" ? "v2" : "v1";
@@ -298,7 +298,7 @@ document.getElementById("form").addEventListener("submit", e => {
   e.preventDefault(); const f = e.target;
   if (!f.name.value.trim() || !/^\S+@\S+\.\S+$/.test(f.email.value)) { f.email.focus(); return; }
   track("form_submit", {role: role || "unknown"});
-  if (CONFIG.FORM_ACTION) { const fd = new FormData(f); fd.append("variant", variant); fd.append("source", source); fetch(CONFIG.FORM_ACTION, {method: "POST", mode: "no-cors", body: fd}); }
+  if (CONFIG.FORM_ACTION) { const E = CONFIG.FORM_ENTRIES, fd = new FormData(); fd.append(E.name, f.name.value.trim()); fd.append(E.email, f.email.value.trim()); fd.append(E.variant, variant); fd.append(E.source, source); fetch(CONFIG.FORM_ACTION, {method: "POST", mode: "no-cors", body: fd}); }
   f.style.display = "none"; document.querySelector(".cta .next").style.display = "none"; document.getElementById("thanks").style.display = "block";
 });
 </script>
